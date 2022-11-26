@@ -30,11 +30,11 @@ func Test_getFoundAndNotFoundVariables(t *testing.T) {
 			args: args{
 				vars: []string{"ENV_0", "ENV_1", "ENV_2"},
 				items: []*circleci.ProjectVariable{
-					&circleci.ProjectVariable{Name: "ENV_1", Value: "xxxxenv"},
+					{Name: "ENV_1", Value: "xxxxenv"},
 				},
 			},
 			want: []*circleci.ProjectVariable{
-				&circleci.ProjectVariable{Name: "ENV_1", Value: "xxxxenv"},
+				{Name: "ENV_1", Value: "xxxxenv"},
 			},
 			want1: []string{
 				"ENV_0", "ENV_2",
@@ -45,14 +45,14 @@ func Test_getFoundAndNotFoundVariables(t *testing.T) {
 			args: args{
 				vars: []string{"ENV_0", "ENV_1", "ENV_2"},
 				items: []*circleci.ProjectVariable{
-					&circleci.ProjectVariable{Name: "ENV_1", Value: "xxxxenv"},
-					&circleci.ProjectVariable{Name: "ENV_2", Value: "xxxxenv"},
-					&circleci.ProjectVariable{Name: "ENV_3", Value: "xxxxenv"},
+					{Name: "ENV_1", Value: "xxxxenv"},
+					{Name: "ENV_2", Value: "xxxxenv"},
+					{Name: "ENV_3", Value: "xxxxenv"},
 				},
 			},
 			want: []*circleci.ProjectVariable{
-				&circleci.ProjectVariable{Name: "ENV_1", Value: "xxxxenv"},
-				&circleci.ProjectVariable{Name: "ENV_2", Value: "xxxxenv"},
+				{Name: "ENV_1", Value: "xxxxenv"},
+				{Name: "ENV_2", Value: "xxxxenv"},
 			},
 			want1: []string{
 				"ENV_0",
@@ -63,7 +63,7 @@ func Test_getFoundAndNotFoundVariables(t *testing.T) {
 			args: args{
 				vars: []string{"ENV_0", "ENV_1", "ENV_2"},
 				items: []*circleci.ProjectVariable{
-					&circleci.ProjectVariable{Name: "ENV_3", Value: "xxxxenv"},
+					{Name: "ENV_3", Value: "xxxxenv"},
 				},
 			},
 			want: []*circleci.ProjectVariable{},
@@ -85,7 +85,7 @@ func Test_getFoundAndNotFoundVariables(t *testing.T) {
 			args: args{
 				vars: []string{},
 				items: []*circleci.ProjectVariable{
-					&circleci.ProjectVariable{Name: "ENV_0", Value: "xxxxenv"},
+					{Name: "ENV_0", Value: "xxxxenv"},
 				},
 			},
 			want:  []*circleci.ProjectVariable{},
@@ -122,11 +122,11 @@ func TestClient_DeleteVariablesInteractive(t *testing.T) {
 
 	pvl := circleci.ProjectVariableList{
 		Items: []*circleci.ProjectVariable{
-			&circleci.ProjectVariable{Name: "FOO", Value: "xxxx_foo"},
-			&circleci.ProjectVariable{Name: "BAR", Value: "xxxx_bar"},
-			&circleci.ProjectVariable{Name: "TEST0", Value: "xxxxtest"},
-			&circleci.ProjectVariable{Name: "TEST1", Value: "xxxxest1"},
-			&circleci.ProjectVariable{Name: "TEST2", Value: "xxxxest2"},
+			{Name: "FOO", Value: "xxxx_foo"},
+			{Name: "BAR", Value: "xxxx_bar"},
+			{Name: "TEST0", Value: "xxxxtest"},
+			{Name: "TEST1", Value: "xxxxest1"},
+			{Name: "TEST2", Value: "xxxxest2"},
 		},
 	}
 
