@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/adrg/xdg"
+	"github.com/stretchr/testify/assert"
 )
 
 func prepareConfigPath() (func(), error) {
@@ -34,7 +35,7 @@ func TestReadConfig(t *testing.T) {
 		t.Errorf("Failed to prepare: %v", err)
 	}
 	defer cleaner()
-	if err := prepareConfig("apitoken: abc\norganizationname: cde"); err != nil {
+	if err := prepareConfig("apitoken: abc\norganizationname: cde\n"); err != nil {
 		t.Errorf("Failed to prepare a config file: %v", err)
 	}
 	got, err := ReadConfig()
@@ -48,4 +49,29 @@ func TestReadConfig(t *testing.T) {
 	if !reflect.DeepEqual(got, expected) {
 		t.Errorf("ReadConfig() got = %v, want %v", got, expected)
 	}
+}
+
+func TestWriteConfig(t *testing.T) {
+	cleaner, err := prepareConfigPath()
+	if err != nil {
+		t.Errorf("Failed to prepare: %v", err)
+	}
+	defer cleaner()
+	conf := &Config{
+		ApiToken:         "efg",
+		OrganizationName: "ghi",
+	}
+	if err := WriteConfig(conf); err != nil {
+		t.Errorf("WriteConfig() error = %v", err)
+	}
+	path, err := getConfigPath()
+	if err != nil {
+		t.Error(err)
+	}
+	expected := "apitoken: efg\norganizationname: ghi\n"
+	dat, err := os.ReadFile(path)
+	if err != nil {
+		t.Error(err)
+	}
+	assert.Equal(t, expected, string(dat))
 }
