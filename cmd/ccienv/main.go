@@ -15,9 +15,12 @@ import (
 	command "github.com/threepipes/circleci-env/commands"
 )
 
+const version = "1.4.5"
+
 var cmd struct {
-	Org  string `short:"o" help:"Set your CircleCI organization name. If not specified, the default value is used."`
-	Repo string `short:"r" help:"Set your target repository name. If not specified, the origin URL of the current directory's git project is used."`
+	Version kong.VersionFlag `short:"v" help:"Display version of this tool."`
+	Org     string           `short:"o" help:"Set your CircleCI organization name. If not specified, the default value is used."`
+	Repo    string           `short:"r" help:"Set your target repository name. If not specified, the origin URL of the current directory's git project is used."`
 
 	Rm  command.RmCmd  `cmd:"" help:"Remove environment variables. Either environment variables or the interactive flag must be specified."`
 	Ls  command.LsCmd  `cmd:"" help:"List environment variables."`
@@ -28,7 +31,6 @@ var cmd struct {
 }
 
 func handleErr(err error) {
-	// FIXME: introduce error type
 	if err != nil {
 		logrus.WithField("error", err).Error("Internal error occured.")
 		os.Exit(1)
@@ -92,7 +94,7 @@ func getClient() (*cli.Client, error) {
 }
 
 func mainRun() {
-	kc := kong.Parse(&cmd)
+	kc := kong.Parse(&cmd, kong.Vars{"version": "ccienv version " + version})
 
 	ctx := context.Background()
 	err := kc.Run(&command.Context{
