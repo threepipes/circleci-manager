@@ -1,7 +1,9 @@
 package cli
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 
 	"github.com/AlecAivazis/survey/v2"
 )
@@ -48,7 +50,7 @@ func (p *Prompt) ReadSecret(msg string) (string, error) {
 	return ans, nil
 }
 
-func (p *Prompt) ReadInput(msg string) (string, error) {
+func (p *Prompt) ReadLine(msg string) (string, error) {
 	ans := ""
 	pmt := &survey.Input{
 		Message: msg,
@@ -57,5 +59,19 @@ func (p *Prompt) ReadInput(msg string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("read input: %w", err)
 	}
+	return ans, nil
+}
+
+func (p *Prompt) ReadAll(msg string) (string, error) {
+	fmt.Println(msg)
+	scn := bufio.NewScanner(os.Stdin)
+	ans := ""
+	for scn.Scan() {
+		ans += scn.Text() + "\n"
+	}
+	if err := scn.Err(); err != nil {
+		return "", fmt.Errorf("read input without tty: %w", err)
+	}
+	fmt.Println(ans)
 	return ans, nil
 }

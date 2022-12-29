@@ -13,7 +13,7 @@ type ConfigInitCmd struct {
 
 func (l *ConfigInitCmd) Run(c *Context) error {
 	prompt := cli.Prompt{}
-	org, err := prompt.ReadInput("Please set your default GitHub organization: ")
+	org, err := prompt.ReadLine("Please set your default GitHub organization: ")
 	if err != nil {
 		return err
 	}

@@ -6,8 +6,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 
 	"github.com/grezar/go-circleci"
+	"github.com/joho/godotenv"
 	"github.com/sirupsen/logrus"
 )
 
@@ -16,7 +18,8 @@ type UI interface {
 	YesNo(msg string) (bool, error)
 	SelectFromList(msg string, ls []string) ([]string, error)
 	ReadSecret(msg string) (string, error)
-	ReadInput(msg string) (string, error)
+	ReadLine(msg string) (string, error)
+	ReadAll(msg string) (string, error)
 }
 
 type Client struct {
@@ -170,6 +173,141 @@ func (c *Client) DeleteVariables(ctx context.Context, vars []string) error {
 		return nil
 	}
 	return c.deleteVariables(ctx, dels)
+}
+
+type FileType uint16
+
+const (
+	FileTypeUnknown FileType = iota
+	FileTypeJson
+	FileTypeDotenv
+)
+
+func validateFormatSpecification(filetype string) (FileType, error) {
+	allowed := map[string]FileType{
+		"json":   FileTypeJson,
+		"dotenv": FileTypeDotenv,
+		"":       FileTypeDotenv, // Default value
+	}
+	if t, ok := allowed[filetype]; ok {
+		return t, nil
+	} else {
+		return FileTypeUnknown, fmt.Errorf("")
+	}
+}
+
+func parseJsonToVariables(body string) ([]*circleci.ProjectVariable, error) {
+	// TODO: use an original type of ProjectVariable
+	var pvs []*circleci.ProjectVariable
+	if err := json.Unmarshal([]byte(body), &pvs); err != nil {
+		return nil, fmt.Errorf("parse json to variables: %w", err)
+	}
+	return pvs, nil
+}
+
+func parseDotenvToVariables(body string) ([]*circleci.ProjectVariable, error) {
+	env, err := godotenv.Unmarshal(body)
+	if err != nil {
+		return nil, err
+	}
+	pvs := make([]*circleci.ProjectVariable, len(env))
+	i := 0
+	for k, v := range env {
+		pvs[i] = &circleci.ProjectVariable{
+			Name:  k,
+			Value: v,
+		}
+		i++
+	}
+	return pvs, nil
+}
+
+func parseVariables(body string, ft FileType) ([]*circleci.ProjectVariable, error) { // TODO: use original variable type
+	switch ft {
+	case FileTypeDotenv:
+		return parseDotenvToVariables(body)
+	case FileTypeJson:
+		return parseJsonToVariables(body)
+	}
+	return nil, fmt.Errorf("no valid file type is specified at parseVariables: %v", ft)
+}
+
+// UpdateOrCreateVariablesFromFile updates environmental variables by reading a file or stdin
+// If the path is empty, stdin will be used as input
+func (c *Client) UpdateOrCreateVariablesFromFile(ctx context.Context, path string, filetype string) (err error) {
+	ft, err := validateFormatSpecification(filetype)
+	if err != nil {
+		return err
+	}
+	body := ""
+	if path == "" {
+		body, err = c.ui.ReadAll("Please input environment variables. (Finish to send EOF)")
+		if err != nil {
+			return err
+		}
+	} else {
+		dat, err := os.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		body = string(dat)
+	}
+	pvs, err := parseVariables(body, ft)
+	if err != nil {
+		return err
+	}
+	return c.updateOrCreateVariables(ctx, pvs)
+}
+
+func makeProjectVariableMap(vs *circleci.ProjectVariableList) map[string]*circleci.ProjectVariable {
+	mp := make(map[string]*circleci.ProjectVariable)
+	for _, v := range vs.Items {
+		mp[v.Name] = v
+	}
+	return mp
+}
+
+func (c *Client) updateOrCreateVariables(ctx context.Context, pvs []*circleci.ProjectVariable) error {
+	vars, err := c.ci.Projects.ListVariables(ctx, c.projectSlug)
+	if err != nil {
+		return fmt.Errorf("update or create vars: %w", err)
+	}
+	mp := makeProjectVariableMap(vars)
+	overwrittens := make([]*circleci.ProjectVariable, 0)
+	for _, pv := range pvs {
+		if v, prs := mp[pv.Name]; prs {
+			overwrittens = append(overwrittens, v)
+		}
+	}
+	if len(overwrittens) > 0 {
+		fmt.Println("These values are already exist.")
+		fmt.Println()
+		dumpVariables(overwrittens)
+		fmt.Println()
+		yes, err := c.ui.YesNo("Do you want to update all the variables?")
+		if err != nil {
+			return err
+		}
+		if !yes {
+			fmt.Println("Cancelled.")
+			return nil
+		}
+	}
+	for _, pv := range pvs {
+		v, err := c.ci.Projects.CreateVariable(ctx, c.projectSlug, circleci.ProjectCreateVariableOptions{
+			Name:  &pv.Name,
+			Value: &pv.Value,
+		})
+		if err != nil {
+			logrus.WithFields(logrus.Fields{
+				"key":   pv.Name,
+				"error": err,
+			}).Error("An error occured when creating a variable. Continue.")
+		} else {
+			fmt.Printf("Created: %v\n", v.Name)
+		}
+	}
+	return nil
 }
 
 func (c *Client) UpdateOrCreateVariable(ctx context.Context, key string, val string) error {
