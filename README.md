@@ -63,6 +63,9 @@ $ ccienv -r circleci-env ls
 # Add a variable
 $ ccienv add TEST_ENV somevalue
 
+# Add variables by a file or stdin
+$ ccienv addi -f envs.json -t json
+
 # Delete variables interactive
 $ ccienv rm -i
 ```
