@@ -33,19 +33,34 @@ func (m *MockUI) EXPECT() *MockUIMockRecorder {
 	return m.recorder
 }
 
-// ReadInput mocks base method.
-func (m *MockUI) ReadInput(msg string) (string, error) {
+// ReadAll mocks base method.
+func (m *MockUI) ReadAll(msg string) (string, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "ReadInput", msg)
+	ret := m.ctrl.Call(m, "ReadAll", msg)
 	ret0, _ := ret[0].(string)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// ReadInput indicates an expected call of ReadInput.
-func (mr *MockUIMockRecorder) ReadInput(msg interface{}) *gomock.Call {
+// ReadAll indicates an expected call of ReadAll.
+func (mr *MockUIMockRecorder) ReadAll(msg interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadInput", reflect.TypeOf((*MockUI)(nil).ReadInput), msg)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadAll", reflect.TypeOf((*MockUI)(nil).ReadAll), msg)
+}
+
+// ReadLine mocks base method.
+func (m *MockUI) ReadLine(msg string) (string, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "ReadLine", msg)
+	ret0, _ := ret[0].(string)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// ReadLine indicates an expected call of ReadLine.
+func (mr *MockUIMockRecorder) ReadLine(msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "ReadLine", reflect.TypeOf((*MockUI)(nil).ReadLine), msg)
 }
 
 // ReadSecret mocks base method.

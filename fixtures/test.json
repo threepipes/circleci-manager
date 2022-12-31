@@ -1,0 +1,10 @@
+[
+  {
+    "name": "TEST_ENV_1",
+    "value": "aaa"
+  },
+  {
+    "name": "TEST_ENV_2",
+    "value": "bbb"
+  }
+]

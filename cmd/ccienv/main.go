@@ -22,9 +22,10 @@ var cmd struct {
 	Org     string           `short:"o" help:"Set your CircleCI organization name. If not specified, the default value is used."`
 	Repo    string           `short:"r" help:"Set your target repository name. If not specified, the origin URL of the current directory's git project is used."`
 
-	Rm  command.RmCmd  `cmd:"" help:"Remove environment variables. Either environment variables or the interactive flag must be specified."`
-	Ls  command.LsCmd  `cmd:"" help:"List environment variables."`
-	Add command.AddCmd `cmd:"" help:"Add an environment variable."`
+	Rm           command.RmCmd           `cmd:"" help:"Remove environment variables. Either environment variables or the interactive flag must be specified."`
+	Ls           command.LsCmd           `cmd:"" help:"List environment variables."`
+	Add          command.AddCmd          `cmd:"" help:"Add an environment variable."`
+	AddFromInput command.AddFromInputCmd `cmd:"" aliases:"addi" help:"Add multiple environment variables from a file or stdin."`
 
 	Config  command.ConfigCmd  `cmd:"" help:"Commands for ccienv configurations."`
 	Project command.ProjectCmd `cmd:"" help:"Commands for CircleCI projects."`

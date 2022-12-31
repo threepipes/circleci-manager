@@ -270,3 +270,179 @@ func TestClient_UpdateOrCreateVariable(t *testing.T) {
 		})
 	}
 }
+
+func updateOrCreateBulkScaffold(t *testing.T, created []*circleci.ProjectVariable, exists []*circleci.ProjectVariable) func() {
+	expectedGetURL := apiBaseURL + "/envvar"
+	expectedCreateURL := apiBaseURL + "/envvar"
+
+	pvl := circleci.ProjectVariableList{
+		Items: exists,
+	}
+	resp, err := httpmock.NewJsonResponder(200, pvl)
+	if err != nil {
+		t.Errorf("Failed to convert the expected variable: %v", err)
+	}
+	httpmock.RegisterResponder("GET", expectedGetURL, resp)
+
+	mp := make(map[string]*circleci.ProjectVariable)
+	for _, pv := range created {
+		mp[pv.Name] = pv
+	}
+
+	httpmock.RegisterResponder("POST", expectedCreateURL,
+		func(r *http.Request) (*http.Response, error) {
+			var pv circleci.ProjectVariable
+			err := json.NewDecoder(r.Body).Decode(&pv)
+			if err != nil {
+				msg := fmt.Sprintf("Failed to convert the expected variable: %v", err)
+				return httpmock.NewStringResponse(500, msg), nil
+			}
+			v, prs := mp[pv.Name]
+			assert.True(t, prs, "An unexpected variable is given: ", pv)
+			assert.Equal(t, v.Value, pv.Value, "An unexpected value is given: ", pv)
+			delete(mp, pv.Name)
+			resp, err := httpmock.NewJsonResponse(201, v)
+			if err != nil {
+				msg := fmt.Sprintf("Failed to convert the expected variable: %v", err)
+				return httpmock.NewStringResponse(500, msg), nil
+			}
+			return resp, nil
+		})
+	checker := func() {
+		info := httpmock.GetCallCountInfo()
+		assert.Equal(t, 1, info["GET "+expectedGetURL], "Expected number of get API call is wrong")
+		assert.Equal(t, len(created), info["POST "+expectedCreateURL], "Expected number of post API call is wrong")
+	}
+	return checker
+}
+
+func setupForUpdateOrCreateBulkTest(t *testing.T, ui *mock_cli.MockUI, created []*circleci.ProjectVariable, exists []*circleci.ProjectVariable) (*Client, func()) {
+	httpmock.Activate()
+
+	checker := updateOrCreateBulkScaffold(t, created, exists)
+
+	config := circleci.DefaultConfig()
+	config.HTTPClient = http.DefaultClient
+	config.Token = testAPIToken
+	ci, err := circleci.NewClient(config)
+	if err != nil {
+		t.Error(err)
+	}
+	c := &Client{
+		ci:          ci,
+		projectSlug: projectSlug,
+		ui:          ui,
+		token:       testAPIToken,
+	}
+	closer := func() {
+		checker()
+		httpmock.DeactivateAndReset()
+	}
+	return c, closer
+}
+
+func TestClient_UpdateOrCreateVariablesFromFile(t *testing.T) {
+	type args struct {
+		created []*circleci.ProjectVariable
+		exist   []*circleci.ProjectVariable
+		path    string
+		format  string
+	}
+	tests := []struct {
+		name string
+		args args
+		ui   *mock_cli.MockUI
+	}{
+		{
+			name: "JSON file overwrite",
+			args: args{
+				created: []*circleci.ProjectVariable{
+					{
+						Name:  "TEST_ENV_1",
+						Value: "aaa",
+					},
+					{
+						Name:  "TEST_ENV_2",
+						Value: "bbb",
+					},
+				},
+				exist: []*circleci.ProjectVariable{
+					{
+						Name:  "TEST_ENV_2",
+						Value: "abc",
+					},
+				},
+				path:   "fixtures/test.json",
+				format: "json",
+			},
+			ui: func() *mock_cli.MockUI {
+				ctrl := gomock.NewController(t)
+				ui := mock_cli.NewMockUI(ctrl)
+				ui.EXPECT().YesNo(gomock.Any()).Return(true, nil)
+				return ui
+			}(),
+		},
+		{
+			name: "dotenv file",
+			args: args{
+				created: []*circleci.ProjectVariable{
+					{
+						Name:  "TEST_ENV_1",
+						Value: "aaa",
+					},
+					{
+						Name:  "TEST_ENV_2",
+						Value: "bbb",
+					},
+				},
+				exist: []*circleci.ProjectVariable{
+					{
+						Name:  "TEST_ENV_0",
+						Value: "abc",
+					},
+				},
+				path:   "fixtures/dotenv.test",
+				format: "dotenv",
+			},
+			ui: func() *mock_cli.MockUI {
+				ctrl := gomock.NewController(t)
+				ui := mock_cli.NewMockUI(ctrl)
+				return ui
+			}(),
+		},
+		{
+			name: "dotenv stdin",
+			args: args{
+				created: []*circleci.ProjectVariable{
+					{
+						Name:  "TEST_1",
+						Value: "aaaa",
+					},
+					{
+						Name:  "TEST_2",
+						Value: "bbbb",
+					},
+				},
+				exist:  []*circleci.ProjectVariable{},
+				path:   "",
+				format: "dotenv",
+			},
+			ui: func() *mock_cli.MockUI {
+				ctrl := gomock.NewController(t)
+				ui := mock_cli.NewMockUI(ctrl)
+				stdin := "TEST_1=aaaa\nTEST_2=bbbb\n"
+				ui.EXPECT().ReadAll(gomock.Any()).Return(stdin, nil)
+				return ui
+			}(),
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c, closer := setupForUpdateOrCreateBulkTest(t, tt.ui, tt.args.created, tt.args.exist)
+			defer closer()
+			if err := c.UpdateOrCreateVariablesFromFile(context.TODO(), tt.args.path, tt.args.format); err != nil {
+				t.Error(err)
+			}
+		})
+	}
+}
