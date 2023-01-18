@@ -136,6 +136,8 @@ github.com/grezar/go-circleci v0.7.1 h1:q8rTOZqZ8stCHJ4L7EIbw1KPCHVKSlp49sGvlUfe
 github.com/grezar/go-circleci v0.7.1/go.mod h1:6m90eq6Zz655bji3MiKKK2iI7otfH7rsmecV5Rs8d/A=
 github.com/grezar/go-circleci v0.8.0 h1:3142YMDSzEmQyKFqUxo7+jNtsZwr+ZprxmIF4hAKgdw=
 github.com/grezar/go-circleci v0.8.0/go.mod h1:6m90eq6Zz655bji3MiKKK2iI7otfH7rsmecV5Rs8d/A=
+github.com/grezar/go-circleci v0.8.1 h1:BOId01BKxmbhjr1BmOaqj6NBrZCImgBJslpv8LS7s7s=
+github.com/grezar/go-circleci v0.8.1/go.mod h1:6m90eq6Zz655bji3MiKKK2iI7otfH7rsmecV5Rs8d/A=
 github.com/hashicorp/golang-lru v0.5.0/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/golang-lru v0.5.1/go.mod h1:/m3WP610KZHVQ1SGc6re/UDhFvYD7pJ4Ao+sR/qLZy8=
 github.com/hashicorp/hcl v1.0.0 h1:0Anlzjpi4vEasTeNFn2mLJgTSwt0+6sfsiTG8qcWGx4=
