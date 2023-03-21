@@ -7,7 +7,7 @@ require (
 	github.com/adrg/xdg v0.4.0
 	github.com/alecthomas/kong v0.7.1
 	github.com/golang/mock v1.6.0
-	github.com/grezar/go-circleci v0.8.1
+	github.com/grezar/go-circleci v0.9.1
 	github.com/jarcoal/httpmock v1.3.0
 	github.com/joho/godotenv v1.5.1
 	github.com/sirupsen/logrus v1.9.0

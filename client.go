@@ -129,14 +129,11 @@ func makeReverseResolutionMap(vs []string) map[string]int {
 }
 
 func (c *Client) DeleteVariablesInteractive(ctx context.Context) error {
-	pv, err := c.ci.Projects.ListVariables(ctx, c.projectSlug)
+	vs, err := c.listAllVariables(ctx)
 	if err != nil {
 		return fmt.Errorf("delete vars: %w", err)
 	}
-	if pv.NextPageToken != "" {
-		logrus.Warn("Warning! Not all variables are listed.")
-	}
-	spv := convertToString(pv.Items)
+	spv := convertToString(vs)
 	sel, err := c.ui.SelectFromList("Choose variables to be deleted.", spv)
 	if err != nil {
 		return fmt.Errorf("delete vars: %w", err)
@@ -145,22 +142,19 @@ func (c *Client) DeleteVariablesInteractive(ctx context.Context) error {
 	rrm := makeReverseResolutionMap(spv)
 	dels := make([]*circleci.ProjectVariable, len(sel))
 	for i, s := range sel {
-		dels[i] = pv.Items[rrm[s]]
+		dels[i] = vs[rrm[s]]
 	}
 
 	return c.deleteVariables(ctx, dels)
 }
 
 func (c *Client) DeleteVariables(ctx context.Context, vars []string) error {
-	pv, err := c.ci.Projects.ListVariables(ctx, c.projectSlug)
+	vs, err := c.listAllVariables(ctx)
 	if err != nil {
 		return fmt.Errorf("delete vars: %w", err)
 	}
-	if pv.NextPageToken != "" {
-		logrus.Warn("Warning! Not all variables are listed.")
-	}
 
-	dels, nonDels := getFoundAndNotFoundVariables(vars, pv.Items)
+	dels, nonDels := getFoundAndNotFoundVariables(vars, vs)
 	if len(nonDels) > 0 {
 		fmt.Println("These variables are not found.")
 		for _, v := range nonDels {
@@ -259,20 +253,20 @@ func (c *Client) UpdateOrCreateVariablesFromFile(ctx context.Context, path strin
 	return c.updateOrCreateVariables(ctx, pvs)
 }
 
-func makeProjectVariableMap(vs *circleci.ProjectVariableList) map[string]*circleci.ProjectVariable {
+func makeProjectVariableMap(vs []*circleci.ProjectVariable) map[string]*circleci.ProjectVariable {
 	mp := make(map[string]*circleci.ProjectVariable)
-	for _, v := range vs.Items {
+	for _, v := range vs {
 		mp[v.Name] = v
 	}
 	return mp
 }
 
 func (c *Client) updateOrCreateVariables(ctx context.Context, pvs []*circleci.ProjectVariable) error {
-	vars, err := c.ci.Projects.ListVariables(ctx, c.projectSlug)
+	vs, err := c.listAllVariables(ctx)
 	if err != nil {
-		return fmt.Errorf("update or create vars: %w", err)
+		return fmt.Errorf("update or create: %w", err)
 	}
-	mp := makeProjectVariableMap(vars)
+	mp := makeProjectVariableMap(vs)
 	overwrittens := make([]*circleci.ProjectVariable, 0)
 	for _, pv := range pvs {
 		if v, prs := mp[pv.Name]; prs {
@@ -334,15 +328,24 @@ func (c *Client) UpdateOrCreateVariable(ctx context.Context, key string, val str
 	return nil
 }
 
+func (c *Client) listAllVariables(ctx context.Context) ([]*circleci.ProjectVariable, error) {
+	opts := circleci.ProjectListVariablesOptions{}
+	pv, err := c.ci.Projects.ListVariables(ctx, c.projectSlug, opts)
+	if err != nil {
+		return nil, fmt.Errorf("listing all variables: %w", err)
+	}
+	if pv.NextPageToken != "" {
+		logrus.Warn("Warning! Not all variables are listed.")
+	}
+	return pv.Items, nil
+}
+
 func (c *Client) ListVariables(ctx context.Context) error {
-	vars, err := c.ci.Projects.ListVariables(ctx, c.projectSlug)
+	vs, err := c.listAllVariables(ctx)
 	if err != nil {
 		return fmt.Errorf("list vars: %w", err)
 	}
-	dumpVariables(vars.Items)
-	if vars.NextPageToken != "" {
-		logrus.WithField("NextPageToken", vars.NextPageToken).Warn("Not all values are displayed")
-	}
+	dumpVariables(vs)
 	return nil
 }
 
