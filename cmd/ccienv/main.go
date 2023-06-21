@@ -15,7 +15,7 @@ import (
 	command "github.com/threepipes/circleci-env/commands"
 )
 
-const version = "1.4.5"
+const version = "1.5.3"
 
 var cmd struct {
 	Version kong.VersionFlag `short:"v" help:"Display version of this tool."`
